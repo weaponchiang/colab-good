@@ -1,7 +1,0 @@
-UniversalSubscription/
-├── src/
-│   └── index.js
-├── .gitignore
-├── README.md
-├── package.json
-└── LICENSE
