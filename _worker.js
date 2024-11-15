@@ -1,7 +1,6 @@
 const config = {
-  // 此处修改登录密码token
-  WebToken: 'sub',
-  FileName: 'UniversalSub',
+  WebToken: 'sub', // 此处修改登录密码token
+  FileName: 'Colab',
   MainData: '',
   urls: [],
   subconverter: "SUBAPI.fxxk.dedyn.io",
@@ -49,9 +48,12 @@ export default {
     // 确定订阅格式
     const subscriptionFormat = determineSubscriptionFormat(userAgent, url);
     let subscriptionConversionUrl = `${url.origin}/${await MD5MD5(fakeToken)}?token=${fakeToken}`;
-    let req_data = config.MainData + (await getSubscription(config.urls, "v2rayn", request.headers.get('User-Agent')))[0].join('\n');
-    subscriptionConversionUrl += `|${(await getSubscription(config.urls, "v2rayn", request.headers.get('User-Agent')))[1].join("|")}`;
     
+    // 性能优化：将getSubscription的调用移到这里，避免重复调用
+    const [subscriptionContent, unconvertedLinks] = await getSubscription(config.urls, "v2rayn", request.headers.get('User-Agent'));
+    let req_data = config.MainData + subscriptionContent.join('\n');
+    subscriptionConversionUrl += `|${unconvertedLinks.join("|")}`;
+
     // 如果存在WARP环境变量，添加WARP链接
     if (env.WARP) subscriptionConversionUrl += `|${(await addLinks(env.WARP)).join("|")}`;
 
@@ -118,8 +120,7 @@ function determineSubscriptionFormat(userAgent, url) {
   if (userAgent.includes('clash') || url.searchParams.has('clash')) return 'clash';
   if (userAgent.includes('sing-box') || url.searchParams.has('sb') || url.searchParams.has('singbox')) return 'singbox';
   if (userAgent.includes('surge') || url.searchParams.has('surge')) return 'surge';
-  if (userAgent.includes('v2rayn') || url.searchParams.has('v2rayn')) return 'v2rayn';
-  return 'base64'; // 默认返回base64格式
+  return 'base64';
 }
 
 /**
@@ -155,21 +156,7 @@ async function getSubscription(urls, UA, userAgentHeader) {
     try {
       const response = await fetch(url, { headers });
       if (response.status === 200) {
-        let content = await response.text();
-        subscriptionContent.push(content.split("\n").map(line => {
-          line = line.trim();
-          // 处理不同类型的链接
-          if (line.startsWith('ss://')) {
-            // 处理SS链接
-          } else if (line.startsWith('vmess://')) {
-            // 处理VMess链接
-          } else if (line.startsWith('trojan://')) {
-            // 处理Trojan链接
-          } else if (line.startsWith('ssr://')) {
-            // 处理SSR链接
-          }
-          return line;
-        }).filter(line => line)); // 过滤空行
+        subscriptionContent.push((await response.text()).split("\n").map(line => line.trim()).filter(line => line));
       } else {
         unconvertedLinks.push(url);
       }
