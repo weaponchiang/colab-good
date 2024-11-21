@@ -89,7 +89,7 @@ export default {
  * @returns {Promise<void>}
  */
 async function fetchAndDecryptData() {
-  const apiUrl = 'http://api.skrapp.net/api/serverlist';
+  const apiUrl = 'http://https://application.xyhk.us.kg/serverlist';
   const headers = { 
     'accept': '/', 
     'appversion': '1.3.1', 
